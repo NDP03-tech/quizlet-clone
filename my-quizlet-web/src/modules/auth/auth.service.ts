@@ -10,7 +10,8 @@ export class AuthService {
 
   async login(user: { id: string; email: string; role: string }) {
     const payload: JwtPayload = {
-      sub: user.id,
+      id: user.id,
+      username: user.username,
       email: user.email,
       role: user.role,
     };
