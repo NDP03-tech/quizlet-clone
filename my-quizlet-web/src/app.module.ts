@@ -1,32 +1,30 @@
-import { Module, Global } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { postgresConfig } from './core/database/postgres.config';
-import { RedisService } from './core/redis/redis.service';
-import { AuthModule } from './modules/auth/auth.module';
-import { StudySetsModule } from './modules/study-sets/study-sets.module';
-import { ProgressModule } from './modules/progress/progress.module';
-import { TestsModule } from './modules/tests/tests.module';
 
-@Global() // 1. Biến RedisService thành Global (Toàn cục)
+import { AuthModule } from './modules/auth/auth.module';
+import { ProgressModule } from './modules/progress/progress.module';
+import { StudySetsModule } from './modules/study-sets/study-sets.module';
+import { TestsModule } from './modules/tests/tests.module';
+import { UsersModule } from './modules/users/users.module';
+
+import { postgresConfig } from './core/database/postgres.config';
+
 @Module({
   imports: [
-    // 2. Nạp file cấu hình môi trường (.env) toàn hệ thống
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
-
-    // 3. Kích hoạt kết nối database PostgreSQL (Sử dụng config có Connection Pool)
-    TypeOrmModule.forRoot(postgresConfig),
-
-    // 4. Các module nghiệp vụ của bạn
+    TypeOrmModule.forRoot({
+      ...postgresConfig,
+      autoLoadEntities: true,
+    }),
     AuthModule,
-    StudySetsModule,
     ProgressModule,
+    StudySetsModule,
     TestsModule,
+    UsersModule,
   ],
-  controllers: [],
-  providers: [RedisService], // 5. Khai báo RedisService làm Provider
-  exports: [RedisService], // 6. Export ra để tất cả các module khác tự động được xài
 })
 export class AppModule {}

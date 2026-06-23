@@ -18,6 +18,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+import { UsersModule } from '../users/users.module';
+
 @Module({
   imports: [
     ConfigModule,
@@ -27,14 +29,30 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     JwtModule.registerAsync({
       inject: [ConfigService],
 
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+      useFactory: (configService: ConfigService) => {
+        // Prefer explicit env/config value. In development, fall back to a safe default.
+        const jwtSecret =
+          configService.get<string>('JWT_SECRET') ?? process.env.JWT_SECRET;
+        const env = process.env.NODE_ENV ?? 'development';
 
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') ?? '15m',
-        },
-      }),
+        if (!jwtSecret && env === 'production') {
+          // In production we require a secret to be explicitly set
+          throw new Error('JWT_SECRET is not configured');
+        }
+
+        const secret = jwtSecret ?? 'dev-secret-please-change';
+        const expiresIn = configService.get<string>('JWT_EXPIRES_IN') ?? '15m';
+
+        return {
+          secret,
+          signOptions: {
+            expiresIn: expiresIn as any,
+          },
+        };
+      },
     }),
+
+    UsersModule,
   ],
 
   controllers: [AuthController],
